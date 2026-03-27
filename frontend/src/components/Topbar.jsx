@@ -34,12 +34,12 @@ function Topbar({ currentPage, onNavigate, onLogout }) {
   };
 
   const navItems = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'schemes', label: 'Schemes Hub' },
-    { id: 'fir', label: 'Cyber & FIR' },
-    { id: 'resources', label: 'Resources' },
-    { id: 'blogs', label: 'Blogs' },
-    { id: 'copilot', label: 'Sahayak Ai' }
+    { id: 'overview', label: 'Overview', icon: '📊' },
+    { id: 'schemes', label: 'Schemes Hub', icon: '📋' },
+    { id: 'fir', label: 'Cyber & FIR', icon: '🛡️' },
+    { id: 'resources', label: 'Resources', icon: '📚' },
+    { id: 'blogs', label: 'Blogs', icon: '📰' },
+    { id: 'copilot', label: 'Sahayak Ai', icon: '🤖' }
   ];
 
   return (
@@ -47,7 +47,7 @@ function Topbar({ currentPage, onNavigate, onLogout }) {
       <div className="topbar-header">
         <div className="logo-section">
           <h1>Sahayak</h1>
-          <span className="tagline-small">Citizen Assistance Platform</span>
+          <span className="tagline-small">Citizen Safety Platform</span>
         </div>
         
         <div className="header-actions">
@@ -70,7 +70,7 @@ function Topbar({ currentPage, onNavigate, onLogout }) {
           <div className="session-info desktop-only">
             <div className="status-badge active">
               <span className="status-dot"></span>
-              Session Active
+              Online
             </div>
             <span className="username">{session?.username || 'User'}</span>
             <button onClick={handleLogout} className="logout-button">
@@ -87,6 +87,7 @@ function Topbar({ currentPage, onNavigate, onLogout }) {
             className={`nav-item ${currentPage === item.id ? 'active' : ''}`}
             onClick={() => handleNavigation(item.id)}
           >
+            <span className="nav-icon">{item.icon}</span>
             <span className="nav-label">{item.label}</span>
           </button>
         ))}
@@ -96,7 +97,7 @@ function Topbar({ currentPage, onNavigate, onLogout }) {
             <span className="username">{session?.username || 'User'}</span>
             <div className="status-badge active">
               <span className="status-dot"></span>
-              Active
+              Online
             </div>
           </div>
           <button onClick={handleLogout} className="logout-button mobile">

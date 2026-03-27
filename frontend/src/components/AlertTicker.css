@@ -1,24 +1,36 @@
+/* ===== Alert Ticker — Gradient Accent Strip ===== */
+
 .alert-ticker {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 30px;
-  animation: slideIn 0.5s ease-out;
-  border-bottom: 2px solid var(--border-color);
-  background: var(--bg-white);
+  padding: 10px 24px;
+  animation: fadeInUp 0.4s ease;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: background var(--transition-base);
+}
+
+.alert-ticker:hover {
+  background: var(--bg-elevated);
 }
 
 .alert-ticker.high,
 .alert-ticker.critical {
-  border-left: 4px solid #ff6b6b;
+  border-left: 4px solid var(--danger);
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.06), transparent 30%);
 }
 
 .alert-ticker.medium {
-  border-left: 4px solid var(--primary-green);
+  border-left: 4px solid var(--warning);
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.06), transparent 30%);
 }
 
 .alert-ticker.low {
-  border-left: 4px solid #95a5a6;
+  border-left: 4px solid var(--text-subtle);
 }
 
 .ticker-content {
@@ -29,13 +41,15 @@
 }
 
 .alert-badge {
-  background: var(--text-black);
-  color: var(--bg-white);
+  background: var(--primary-gradient);
+  color: #ffffff;
   padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 0.7rem;
+  border-radius: var(--radius-full);
+  font-size: 0.65rem;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  animation: pulse 2s infinite;
 }
 
 .alert-text {
@@ -43,41 +57,44 @@
   align-items: center;
   gap: 8px;
   flex: 1;
-  font-size: 0.9rem;
-  color: var(--text-black);
+  font-size: 0.88rem;
+  color: var(--text-main);
 }
 
 .alert-text strong {
-  color: var(--text-black);
+  color: var(--text-main);
+  font-weight: 700;
 }
 
 .separator {
-  color: var(--text-black);
-  opacity: 0.5;
+  color: var(--text-subtle);
 }
 
 .alert-category {
-  background: var(--primary-green);
-  color: var(--text-black);
+  background: var(--primary-soft);
+  color: var(--primary-strong);
   padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
   font-weight: 600;
   white-space: nowrap;
+  border: 1px solid var(--border-light);
 }
 
 .ticker-close {
   background: transparent;
   border: none;
-  font-size: 1.2rem;
+  font-size: 1rem;
   cursor: pointer;
   padding: 4px 8px;
-  color: var(--text-black);
-  transition: color 0.2s;
+  color: var(--text-subtle);
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-sm);
 }
 
 .ticker-close:hover {
-  color: #ff6b6b;
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.08);
 }
 
 @keyframes slideIn {
@@ -93,14 +110,14 @@
 
 @media (max-width: 768px) {
   .alert-ticker {
-    padding: 10px 15px;
+    padding: 10px 16px;
   }
 
   .alert-text {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
   }
 
   .separator {
@@ -108,10 +125,10 @@
   }
 
   .alert-category {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
   }
 
   .alert-badge {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
   }
 }
