@@ -14,3 +14,25 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+## Running locally with OpenRouter API
+
+1. Copy `.env.local.example` to `.env.local` in the `frontend` folder and set your API key (do NOT commit `.env.local`):
+
+```
+VITE_OPENROUTER_API_KEY=YOUR_OPENROUTER_API_KEY_HERE
+VITE_OPENROUTER_MODEL=openai/gpt-4o-mini
+VITE_OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+```
+
+2. Or set the key for a single PowerShell session and run dev:
+
+```powershell
+$env:VITE_OPENROUTER_API_KEY='YOUR_OPENROUTER_API_KEY_HERE'
+$env:VITE_OPENROUTER_MODEL='openai/gpt-4o-mini'
+npm.cmd run dev
+```
+
+3. Notes:
+- Never commit your API key. For production, move calls to a server-side proxy to keep the key secret.
+- If you prefer, I can add a small proxy endpoint that forwards requests server-side.

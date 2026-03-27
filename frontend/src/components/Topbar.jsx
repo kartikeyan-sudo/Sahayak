@@ -104,6 +104,15 @@ function Topbar({ currentPage, onNavigate, onLogout }) {
           </button>
         </div>
       </nav>
+
+      {isMobileMenuOpen && (
+        <button
+          type="button"
+          className="mobile-menu-backdrop"
+          aria-label="Close menu"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
     </div>
   );
 }

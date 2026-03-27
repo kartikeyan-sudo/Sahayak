@@ -97,7 +97,7 @@ function Login({ onLoginSuccess }) {
       }
       
       // Demo credentials
-      if (credentials.username === 'demo' && credentials.password === 'sahayak2024') {
+      if (credentials.username === 'sahayak' && credentials.password === 'sahayak2026') {
         const sessionData = {
           userId: 'demo-user',
           username: credentials.username,
@@ -239,7 +239,7 @@ function Login({ onLoginSuccess }) {
           {!isRegistering && (
             <div className="demo-hint">
               <p><strong>Demo Credentials:</strong></p>
-              <p>Username: <code>demo</code> | Password: <code>sahayak2024</code></p>
+              <p>Username: <code>sahayak</code> | Password: <code>sahayak2026</code></p>
             </div>
           )}
         </form>

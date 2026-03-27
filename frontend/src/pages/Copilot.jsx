@@ -1,8 +1,68 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { sendCopilotMessage, getContextualGreeting, isQueryInScope } from '../services/aiService';
 import './Copilot.css';
 
+function isLikelyHtml(text) {
+  if (!text || typeof text !== 'string') return false;
+  return /<\/?[a-z][\s\S]*>/i.test(text) || /<!doctype|<html|<body/i.test(text);
+}
+
+function sanitizeHtml(input) {
+  if (typeof window === 'undefined' || typeof input !== 'string') return input;
+
+  const parser = new window.DOMParser();
+  const doc = parser.parseFromString(input, 'text/html');
+  const allowedTags = new Set([
+    'P', 'B', 'STRONG', 'I', 'EM', 'UL', 'OL', 'LI', 'BR', 'CODE', 'PRE',
+    'H1', 'H2', 'H3', 'H4', 'BLOCKQUOTE', 'A', 'SPAN', 'DIV'
+  ]);
+
+  const allowedAttrs = new Set(['href', 'target', 'rel', 'class']);
+
+  const allElements = Array.from(doc.body.querySelectorAll('*'));
+  allElements.forEach((el) => {
+    if (!allowedTags.has(el.tagName)) {
+      const textNode = doc.createTextNode(el.textContent || '');
+      el.replaceWith(textNode);
+      return;
+    }
+
+    Array.from(el.attributes).forEach((attr) => {
+      const name = attr.name.toLowerCase();
+      const value = attr.value || '';
+
+      if (name.startsWith('on') || name === 'style' || !allowedAttrs.has(name)) {
+        el.removeAttribute(attr.name);
+        return;
+      }
+
+      if (name === 'href') {
+        const safeHref = /^(https?:|mailto:|tel:|#|\/)/i.test(value);
+        if (!safeHref) {
+          el.removeAttribute('href');
+        } else {
+          el.setAttribute('rel', 'noopener noreferrer');
+          if (!el.getAttribute('target')) el.setAttribute('target', '_blank');
+        }
+      }
+    });
+  });
+
+  return doc.body.innerHTML;
+}
+
+function renderMessageContent(msg) {
+  if (msg.type !== 'bot' || !isLikelyHtml(msg.text)) {
+    return msg.text;
+  }
+
+  const cleanHtml = sanitizeHtml(msg.text);
+
+  return <div className="rendered-html" dangerouslySetInnerHTML={{ __html: cleanHtml }} />;
+}
+
 function Copilot() {
+  const messagesRef = useRef(null);
   const [messages, setMessages] = useState([
     {
       type: 'bot',
@@ -12,6 +72,11 @@ function Copilot() {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
+
+  useEffect(() => {
+    if (!messagesRef.current) return;
+    messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+  }, [messages, isLoading]);
 
   const quickActions = [
     'How do I file an FIR for online fraud?',
@@ -110,14 +175,14 @@ function Copilot() {
           </button>
         </div>
 
-        <div className="messages-container">
+        <div className="messages-container" ref={messagesRef}>
           {messages.map((msg, idx) => (
             <div key={idx} className={`message ${msg.type}`}>
               <div className="message-avatar">
                 {msg.type === 'bot' ? 'AI' : 'You'}
               </div>
               <div className="message-bubble">
-                {msg.text}
+                {renderMessageContent(msg)}
               </div>
             </div>
           ))}

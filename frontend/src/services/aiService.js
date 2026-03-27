@@ -1,6 +1,7 @@
-// Sahayak Copilot AI Service with OpenRouter Integration
+// Sahayak Copilot AI Service using OpenRouter API
 
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
+const OPENROUTER_MODEL = import.meta.env.VITE_OPENROUTER_MODEL || 'openai/gpt-4o-mini';
 const OPENROUTER_BASE_URL = import.meta.env.VITE_OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
 
 // System prompt defining Sahayak Copilot's personality and scope
@@ -41,7 +42,6 @@ export async function sendCopilotMessage(messages) {
       throw new Error('OpenRouter API key not configured');
     }
 
-    // Format messages for OpenRouter API
     const formattedMessages = [
       { role: 'system', content: SYSTEM_PROMPT },
       ...messages.map(msg => ({
@@ -59,32 +59,40 @@ export async function sendCopilotMessage(messages) {
         'X-Title': 'Sahayak - Scam Prevention & Policy Navigator'
       },
       body: JSON.stringify({
-        model: 'google/gemma-3-27b-it:free', // Free model that works
+        model: OPENROUTER_MODEL,
         messages: formattedMessages,
         temperature: 0.7,
-        max_tokens: 1000,
+        max_tokens: 900,
         top_p: 0.9
       })
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || `API request failed: ${response.status}`);
+      const apiMessage = errorData?.error?.message || errorData?.message || `API request failed: ${response.status}`;
+      throw new Error(apiMessage);
     }
 
     const data = await response.json();
-    
-    if (!data.choices || !data.choices[0]?.message?.content) {
-      throw new Error('Invalid response format from API');
-    }
 
-    return data.choices[0].message.content;
+    const text = data?.choices?.[0]?.message?.content?.trim();
+    if (!text) throw new Error('Invalid response format from OpenRouter API');
+
+    return text;
   } catch (error) {
     console.error('AI Service Error:', error);
     
     // Return user-friendly error messages
-    if (error.message.includes('API key')) {
-      return 'Sorry, the AI service is not properly configured. Please contact support.';
+    if (
+      error.message.includes('API key') ||
+      error.message.includes('401') ||
+      error.message.includes('Unauthorized') ||
+      error.message.includes('Missing Authentication') ||
+      error.message.includes('No auth credentials')
+    ) {
+      return 'Your OpenRouter API key is missing or invalid. Please update VITE_OPENROUTER_API_KEY and restart the app.';
+    } else if (error.message.includes('403') || error.message.includes('forbidden') || error.message.includes('Forbidden')) {
+      return 'OpenRouter denied access for this key/model. Check your key permissions and selected model.';
     } else if (error.message.includes('network') || error.message.includes('fetch')) {
       return 'I\'m having trouble connecting to the AI service. Please check your internet connection and try again.';
     } else {
