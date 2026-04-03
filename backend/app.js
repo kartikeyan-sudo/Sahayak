@@ -23,7 +23,35 @@ function normalizeOrigin(value) {
 function createApp() {
   const app = express();
 
-  app.use(cors());
+  app.use(cors({
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true);
+
+      const normalizedOrigin = normalizeOrigin(origin);
+      const localhostRegex = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+      if (localhostRegex.test(normalizedOrigin)) return cb(null, true);
+
+      const configured = new Set(
+        [FRONTEND_URL, ADMIN_FRONTEND_URL, ...ALLOWED_ORIGINS]
+          .map(normalizeOrigin)
+          .filter(Boolean)
+      );
+
+      if (configured.has(normalizedOrigin)) return cb(null, true);
+
+      // Optional convenience for Vercel preview deployments.
+      if (normalizedOrigin.endsWith('.vercel.app')) return cb(null, true);
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('CORS blocked origin:', origin);
+      }
+      return cb(null, false);
+    },
+    credentials: true,
+    optionsSuccessStatus: 204,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With']
+  }));
 
   app.use(express.json());
   app.use('/generated', express.static(path.join(__dirname, 'generated')));
