@@ -1,24 +1,49 @@
 require('dotenv').config();
 const { Pool } = require('pg');
 
-const DATABASE_URL = process.env.DATABASE_URL;
 const MAX_QUERY_RETRIES = Number(process.env.DB_MAX_RETRIES || 2);
+let pool = null;
 
-if (!DATABASE_URL) {
-  throw new Error('DATABASE_URL is required. Set your Neon connection string in backend .env');
+function resolveDatabaseUrl() {
+  return (
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.NEON_DATABASE_URL ||
+    process.env.PG_DATABASE_URL ||
+    ''
+  );
 }
 
-const pool = new Pool({
-  connectionString: DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-  max: Number(process.env.DB_POOL_MAX || 10),
-  idleTimeoutMillis: Number(process.env.DB_IDLE_TIMEOUT_MS || 30000),
-  connectionTimeoutMillis: Number(process.env.DB_CONNECTION_TIMEOUT_MS || 10000)
-});
+function createMissingDbConfigError() {
+  const error = new Error(
+    'Database connection string missing. Set DATABASE_URL (or POSTGRES_URL / NEON_DATABASE_URL) in environment variables.'
+  );
+  error.code = 'DB_CONFIG_MISSING';
+  return error;
+}
 
-pool.on('error', (error) => {
-  console.error('PostgreSQL pool error:', error.message);
-});
+function getPool() {
+  if (pool) return pool;
+
+  const databaseUrl = resolveDatabaseUrl();
+  if (!databaseUrl) {
+    throw createMissingDbConfigError();
+  }
+
+  pool = new Pool({
+    connectionString: databaseUrl,
+    ssl: { rejectUnauthorized: false },
+    max: Number(process.env.DB_POOL_MAX || 10),
+    idleTimeoutMillis: Number(process.env.DB_IDLE_TIMEOUT_MS || 30000),
+    connectionTimeoutMillis: Number(process.env.DB_CONNECTION_TIMEOUT_MS || 10000)
+  });
+
+  pool.on('error', (error) => {
+    console.error('PostgreSQL pool error:', error.message);
+  });
+
+  return pool;
+}
 
 function isTransientDbError(error) {
   if (!error) return false;
@@ -29,10 +54,11 @@ function isTransientDbError(error) {
 }
 
 async function query(text, params = []) {
+  const dbPool = getPool();
   let lastError = null;
   for (let attempt = 0; attempt <= MAX_QUERY_RETRIES; attempt += 1) {
     try {
-      return await pool.query(text, params);
+      return await dbPool.query(text, params);
     } catch (error) {
       lastError = error;
       if (!isTransientDbError(error) || attempt === MAX_QUERY_RETRIES) {
@@ -44,7 +70,8 @@ async function query(text, params = []) {
 }
 
 async function withTransaction(work) {
-  const client = await pool.connect();
+  const dbPool = getPool();
+  const client = await dbPool.connect();
   try {
     await client.query('BEGIN');
     const result = await work(client);
@@ -63,6 +90,10 @@ async function withTransaction(work) {
 }
 
 async function initDatabase() {
+  if (!resolveDatabaseUrl()) {
+    throw createMissingDbConfigError();
+  }
+
   await query('CREATE EXTENSION IF NOT EXISTS pgcrypto;');
 
   await query(`
@@ -192,7 +223,10 @@ async function initDatabase() {
 }
 
 async function closePool() {
-  await pool.end();
+  if (pool) {
+    await pool.end();
+    pool = null;
+  }
 }
 
 module.exports = {

@@ -17,9 +17,13 @@ initDatabase()
     }
   })
   .catch(err => {
+    const missingConfig = err && err.code === 'DB_CONFIG_MISSING';
     const silent = process.env.SILENT_DB_START === 'true' || process.env.NODE_ENV === 'development';
-    if (silent) {
+    if (silent || missingConfig) {
       console.warn('⚠️ Neon PostgreSQL init warning (continuing without DB):', err.message || err);
+      if (missingConfig) {
+        console.warn('⚠️ Configure DATABASE_URL in Render Environment settings to enable DB-backed APIs.');
+      }
     } else {
       console.error('❌ Neon PostgreSQL init error:', err);
       process.exit(1);
