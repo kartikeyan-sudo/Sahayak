@@ -1,13 +1,36 @@
 require('dotenv').config();
+const bcrypt = require('bcrypt');
 const { initDatabase, query } = require('./db');
 const createApp = require('./app');
 
 const app = createApp();
 const PORT = process.env.PORT || 5000;
 
+async function ensureDefaultAdminUser() {
+  const autoSeed = String(process.env.AUTO_SEED_DEFAULT_ADMIN || 'true').toLowerCase() === 'true';
+  if (!autoSeed) return;
+
+  const username = process.env.DEFAULT_ADMIN_USERNAME || 'admin';
+  const password = process.env.DEFAULT_ADMIN_PASSWORD || 'admin';
+  const email = process.env.DEFAULT_ADMIN_EMAIL || `${username}@sahayak.local`;
+
+  const existing = await query('SELECT id FROM admin_users WHERE username = $1', [username]);
+  if (existing.rows[0]) return;
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  await query(
+    `INSERT INTO admin_users (username, email, password_hash, role)
+     VALUES ($1, $2, $3, 'admin')`,
+    [username, email, passwordHash]
+  );
+
+  console.warn('⚠️ Default admin user was auto-created. Change credentials after first login.');
+}
+
 initDatabase()
   .then(async () => {
     try {
+      await ensureDefaultAdminUser();
       const result = await query('SELECT 1 AS ok');
       console.log('✅ Neon PostgreSQL connected and schema ready');
       console.log('🔎 Verify manually with: psql "$DATABASE_URL" -c "SELECT 1;"');
