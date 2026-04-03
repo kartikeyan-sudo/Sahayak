@@ -13,7 +13,7 @@ initDatabase()
       console.log('🔎 Verify manually with: psql "$DATABASE_URL" -c "SELECT 1;"');
       console.log(`✅ Startup check result: SELECT ${result.rows[0].ok}`);
     } catch (err) {
-      console.warn('⚠️ Neon PostgreSQL connected but health check failed:', err.message || err);
+      console.warn('⚠️ Neon PostgreSQL connected but health check failed. :', err.message || err);
     }
   })
   .catch(err => {
