@@ -3,7 +3,7 @@
 ## Prerequisites Check
 - ✅ Node.js installed (v16+)
 - ✅ npm installed
-- ⚠️ MongoDB (optional for prototype - works with LocalStorage only)
+- ✅ Neon PostgreSQL project and connection string
 
 ---
 
@@ -16,7 +16,7 @@ npm install
 
 **Installed packages:**
 - express
-- mongoose
+- pg
 - cors
 - nodemon (dev dependency)
 - dotenv
@@ -47,10 +47,10 @@ npm run dev
 **Expected output:**
 ```
 🚀 Sahayak Backend running on http://localhost:5000
-✅ MongoDB connected successfully (if MongoDB is running)
+✅ Neon PostgreSQL connected and schema ready
 ```
 
-**Note:** If MongoDB is not installed, the app will still work with frontend LocalStorage only.
+**Note:** Backend APIs require `DATABASE_URL` in `backend/.env`.
 
 ---
 
@@ -93,7 +93,7 @@ VITE v7.3.0  ready in XXX ms
 - All data persists in browser LocalStorage
 
 ### 🔄 Backend API Ready (Optional)
-If MongoDB is connected, these APIs work:
+If Neon DB is connected, these APIs work:
 - GET/POST/PATCH/DELETE schemes
 - GET/POST/PATCH/DELETE FIR drafts
 - GET/POST/PATCH/DELETE alerts
@@ -106,9 +106,10 @@ If MongoDB is connected, these APIs work:
 ```
 backend/
 ├── models/
-│   ├── Scheme.js          # Mongoose schema for schemes
-│   ├── FIRDraft.js        # Mongoose schema for FIR drafts
-│   └── Alert.js           # Mongoose schema for alerts
+│   ├── Scheme.js          # Legacy mongoose schema (not used in Neon mode)
+│   ├── FIRDraft.js        # Legacy mongoose schema (not used in Neon mode)
+│   └── Alert.js           # Legacy mongoose schema (not used in Neon mode)
+├── db.js                  # Neon PostgreSQL client + schema init
 ├── routes/
 │   ├── schemes.js         # CRUD routes for schemes
 │   ├── fir.js             # CRUD routes for FIR drafts
@@ -162,16 +163,13 @@ PORT=5001
 VITE_API_BASE_URL=http://localhost:5001
 ```
 
-### MongoDB connection error
-**Error:** `MongoDB connection error`
+### Neon connection error
+**Error:** `Neon PostgreSQL init error`
 
-**Solution:** App works fine without MongoDB! All data uses LocalStorage.
-
-If you want to use MongoDB:
+**Solution:**
 ```powershell
-# Option 1: Install MongoDB locally
-# Option 2: Use MongoDB Atlas (free tier)
-# Update MONGODB_URI in backend/.env
+# Set Neon connection string in backend/.env
+DATABASE_URL=postgresql://USER:PASSWORD@YOUR_NEON_HOST/YOUR_DB?sslmode=require
 ```
 
 ### Frontend can't connect to backend
@@ -194,7 +192,7 @@ If you want to use MongoDB:
 - Logout and login again
 - Session should persist until logout
 
-### 3. Test Backend APIs (if MongoDB connected)
+### 3. Test Backend APIs (if Neon connected)
 ```powershell
 # Test backend health
 curl http://localhost:5000

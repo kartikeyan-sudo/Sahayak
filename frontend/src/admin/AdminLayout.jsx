@@ -29,6 +29,7 @@ function AdminLayout({ currentView, onNavigate, onLogout }) {
           <button onClick={() => { onNavigate('admin-alerts'); setMobileOpen(false); }}>Alerts</button>
           <button onClick={() => { onNavigate('admin-schemes'); setMobileOpen(false); }}>Schemes</button>
           <button onClick={() => { onNavigate('admin-users'); setMobileOpen(false); }}>Users</button>
+          <button onClick={() => { onNavigate('admin-firs'); setMobileOpen(false); }}>FIRs</button>
         </nav>
         {onLogout && (
           <button onClick={onLogout} style={{marginTop: 'auto', width: '100%', padding: 12, background: '#ef4444', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600}}>

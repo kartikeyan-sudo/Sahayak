@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { draftStorage, activityStorage, sessionStorage } from '../utils/localStorage';
+import { activityStorage, sessionStorage } from '../utils/localStorage';
+import { firAPI } from '../utils/api';
 import { incidentTypes } from '../data/mockData';
 import './FIRPage.css';
 
@@ -25,8 +26,15 @@ function FIRPage() {
     loadDrafts();
   }, []);
 
-  const loadDrafts = () => {
-    setSavedDrafts(draftStorage.getAll());
+  const loadDrafts = async () => {
+    try {
+      const session = sessionStorage.get();
+      if (!session?.userId) return;
+      const drafts = await firAPI.getAllByUser(session.userId);
+      setSavedDrafts(Array.isArray(drafts) ? drafts : []);
+    } catch (error) {
+      console.error('Failed to load FIR records:', error);
+    }
   };
 
   const handleInputChange = (e) => {
@@ -36,23 +44,47 @@ function FIRPage() {
     });
   };
 
-  const handleSaveDraft = () => {
-    const session = sessionStorage.get();
-    const draft = {
-      ...formData,
-      userId: session?.userId || 'demo-user',
-      status: 'Draft'
-    };
-    
-    draftStorage.save(draft);
-    activityStorage.add({ type: 'draft-saved', description: 'FIR draft saved' });
-    loadDrafts();
-    alert('Draft saved successfully!');
+  const handleSaveDraft = async () => {
+    try {
+      const session = sessionStorage.get();
+      const draft = {
+        incidentType: formData.incidentType,
+        incidentDate: formData.incidentDate,
+        location: formData.location,
+        estimatedLoss: Number(formData.estimatedLoss || 0),
+        contactDetails: {
+          name: formData.contactName,
+          phone: formData.contactPhone,
+          email: formData.contactEmail
+        },
+        incidentNarrative: formData.incidentNarrative,
+        suspectDetails: {
+          name: formData.suspectName,
+          phone: formData.suspectPhone,
+          account: formData.suspectAccount,
+          upi: formData.suspectUPI
+        },
+        evidence: [],
+        status: 'Draft'
+      };
+
+      if (!session?.userId) {
+        alert('Please login again before saving FIR draft.');
+        return;
+      }
+
+      await firAPI.create(draft);
+      activityStorage.add({ type: 'draft-saved', description: 'FIR draft saved' });
+      await loadDrafts();
+      alert('Draft saved successfully!');
+    } catch (error) {
+      alert(error.message || 'Unable to save draft');
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    handleSaveDraft();
+    await handleSaveDraft();
     setFormData({
       incidentType: '',
       incidentDate: '',
@@ -70,11 +102,37 @@ function FIRPage() {
     setShowForm(false);
   };
 
-  const handleDeleteDraft = (id) => {
+  const handleDeleteDraft = async (id) => {
     if (confirm('Are you sure you want to delete this draft?')) {
-      draftStorage.delete(id);
-      activityStorage.add({ type: 'draft-deleted', description: 'FIR draft deleted' });
-      loadDrafts();
+      try {
+        await firAPI.delete(id);
+        activityStorage.add({ type: 'draft-deleted', description: 'FIR draft deleted' });
+        await loadDrafts();
+      } catch (error) {
+        alert(error.message || 'Unable to delete draft');
+      }
+    }
+  };
+
+  const handleGeneratePdf = async (id) => {
+    try {
+      const updated = await firAPI.generatePdf(id);
+      if (updated?.pdfUrl) {
+        window.open(updated.pdfUrl, '_blank');
+      }
+      await loadDrafts();
+    } catch (error) {
+      alert(error.message || 'Unable to generate PDF');
+    }
+  };
+
+  const handleSubmitFir = async (id) => {
+    try {
+      await firAPI.submit(id);
+      await loadDrafts();
+      alert('FIR submitted successfully.');
+    } catch (error) {
+      alert(error.message || 'Unable to submit FIR');
     }
   };
 
@@ -311,19 +369,31 @@ function FIRPage() {
           <h3>Saved Drafts ({savedDrafts.length})</h3>
           <div className="drafts-list">
             {savedDrafts.map((draft) => (
-              <div key={draft.id} className="draft-item">
+                <div key={draft._id} className="draft-item">
                 <div className="draft-info">
                   <h4>{draft.incidentType || 'Untitled Draft'}</h4>
-                  <p>Loss: ₹{draft.estimatedLoss?.toLocaleString() || '0'}</p>
+                    <p>Loss: ₹{Number(draft.estimatedLoss || 0).toLocaleString()}</p>
                   <span className="draft-date">
-                    Last modified: {new Date(draft.lastModified).toLocaleDateString()}
+                      Last modified: {new Date(draft.updatedAt || draft.createdAt).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="draft-actions">
                   <span className="status-badge draft">{draft.status || 'Draft'}</span>
+                    <button
+                      className="secondary-btn"
+                      onClick={() => handleSubmitFir(draft._id)}
+                    >
+                      Submit
+                    </button>
+                    <button
+                      className="secondary-btn"
+                      onClick={() => handleGeneratePdf(draft._id)}
+                    >
+                      PDF
+                    </button>
                   <button
                     className="delete-btn"
-                    onClick={() => handleDeleteDraft(draft.id)}
+                      onClick={() => handleDeleteDraft(draft._id)}
                   >
                     Delete
                   </button>

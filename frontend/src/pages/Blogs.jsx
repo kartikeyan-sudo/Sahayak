@@ -9,7 +9,7 @@ function Blogs({ selectedBlog, onNavigate }) {
   const API_BASE = getApiBase();
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/admin/blogs`, { credentials: 'include' }).then(r => r.json()).then(data => {
+    fetch(`${API_BASE}/api/blogs`, { credentials: 'include' }).then(r => r.json()).then(data => {
       setBlogs(Array.isArray(data) ? data : (data.blogs || []));
     }).catch(err => {
       console.error('Failed to load blogs:', err);
@@ -20,6 +20,15 @@ function Blogs({ selectedBlog, onNavigate }) {
   const backToList = () => setActiveSlug(null);
 
   const blog = blogs.find(b => b.slug === activeSlug);
+  const formatBlogDate = (item) => {
+    const dateValue = item?.publishedAt || item?.createdAt || item?.date;
+    if (!dateValue) return 'Recently updated';
+    try {
+      return new Date(dateValue).toLocaleDateString();
+    } catch {
+      return 'Recently updated';
+    }
+  };
 
   return (
     <div className="blogs-page">
@@ -34,7 +43,7 @@ function Blogs({ selectedBlog, onNavigate }) {
             <article key={b.slug} className="blog-card">
               <h3>{b.title}</h3>
               <p className="excerpt">{b.excerpt}</p>
-              <div className="meta">{b.author} · {b.date}</div>
+              <div className="meta">{b.author || 'Sahayak Team'} · {formatBlogDate(b)}</div>
               <div className="actions">
                 <button className="visit-btn" onClick={() => openBlog(b.slug)}>Read Article →</button>
               </div>
@@ -48,11 +57,11 @@ function Blogs({ selectedBlog, onNavigate }) {
           <div className="blog-header">
             <button className="back-btn" onClick={backToList}>← Back</button>
             <h2>{blog.title}</h2>
-            <div className="meta">{blog.author} · {blog.date}</div>
+            <div className="meta">{blog.author || 'Sahayak Team'} · {formatBlogDate(blog)}</div>
           </div>
 
           <div className="blog-content">
-            {blog.content.split('\n\n').map((p, i) => (
+            {String(blog.content || '').split('\n\n').filter(Boolean).map((p, i) => (
               <p key={i}>{p}</p>
             ))}
           </div>

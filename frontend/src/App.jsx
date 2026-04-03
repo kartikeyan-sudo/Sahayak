@@ -14,7 +14,7 @@ import BlogManager from './admin/BlogManager';
 import AlertManager from './admin/AlertManager';
 import SchemeEditor from './admin/SchemeEditor';
 import UserManager from './admin/UserManager';
-import AdminLogin from './admin/AdminLogin';
+import FirManager from './admin/FirManager';
 import AdminLoginPage from './pages/AdminLoginPage';
 import { sessionStorage } from './utils/localStorage';
 import './App.css';
@@ -43,6 +43,7 @@ function App() {
   };
 
   const handleLogout = () => {
+    sessionStorage.clear();
     setIsLoggedIn(false);
     setCurrentPage('overview');
   };
@@ -95,6 +96,10 @@ function App() {
       case 'admin-users':
         return (
           <AdminLayout currentView={<UserManager />} onNavigate={setCurrentPage} onLogout={handleAdminLogout} />
+        );
+      case 'admin-firs':
+        return (
+          <AdminLayout currentView={<FirManager />} onNavigate={setCurrentPage} onLogout={handleAdminLogout} />
         );
       case 'copilot':
         return <Copilot />;

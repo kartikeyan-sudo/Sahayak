@@ -52,6 +52,15 @@ function SchemesHub() {
     ? schemes 
     : schemes.filter(s => s.governmentTag === filterTag);
 
+  const getSchemeId = (scheme) => scheme.id || scheme._id;
+  const getStatistics = (scheme) => {
+    const stats = scheme.statistics || {};
+    return {
+      beneficiaries: Number(stats.beneficiaries || 0),
+      successRate: stats.successRate || 'N/A'
+    };
+  };
+
   const tags = ['All', ...new Set(schemes.map(s => s.governmentTag))];
 
   return (
@@ -75,15 +84,15 @@ function SchemesHub() {
 
       <div className="schemes-grid">
         {filteredSchemes.map((scheme) => (
-          <div key={scheme.id} className="scheme-card">
+          <div key={getSchemeId(scheme)} className="scheme-card">
             <div className="scheme-header">
               <span className="scheme-tag">{scheme.governmentTag}</span>
               <button
-                className={`bookmark-btn ${bookmarkedIds.includes(scheme.id) ? 'active' : ''}`}
-                onClick={() => handleBookmark(scheme.id)}
+                className={`bookmark-btn ${bookmarkedIds.includes(getSchemeId(scheme)) ? 'active' : ''}`}
+                onClick={() => handleBookmark(getSchemeId(scheme))}
                 aria-label="Bookmark scheme"
               >
-                {bookmarkedIds.includes(scheme.id) ? '★' : '☆'}
+                {bookmarkedIds.includes(getSchemeId(scheme)) ? '★' : '☆'}
               </button>
             </div>
             
@@ -92,11 +101,11 @@ function SchemesHub() {
             
             <div className="scheme-stats">
               <div className="stat-mini">
-                <strong>{scheme.statistics.beneficiaries.toLocaleString()}</strong>
+                <strong>{getStatistics(scheme).beneficiaries.toLocaleString()}</strong>
                 <span>Beneficiaries</span>
               </div>
               <div className="stat-mini">
-                <strong>{scheme.statistics.successRate}</strong>
+                <strong>{getStatistics(scheme).successRate}</strong>
                 <span>Success Rate</span>
               </div>
             </div>

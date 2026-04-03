@@ -2,14 +2,27 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
+const getAuthToken = () => {
+  const session = localStorage.getItem('sahayakSession');
+  if (!session) return null;
+  try {
+    const parsed = JSON.parse(session);
+    return parsed?.token || null;
+  } catch {
+    return null;
+  }
+};
+
 // Generic API call helper with better header/options merging and credentials included
 const apiCall = async (endpoint, options = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
+  const token = getAuthToken();
 
   const defaultOptions = {
     credentials: 'include', // send cookies for session-based auth
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
     }
   };
 
@@ -48,6 +61,25 @@ const apiCall = async (endpoint, options = {}) => {
   }
 };
 
+// Auth API
+export const authAPI = {
+  register: (payload) => apiCall('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  }),
+  login: (payload) => apiCall('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  }),
+  me: () => apiCall('/api/auth/me')
+};
+
+// Public blogs API
+export const blogsAPI = {
+  getAll: () => apiCall('/api/blogs'),
+  getBySlug: (slug) => apiCall(`/api/blogs/${slug}`)
+};
+
 // Schemes API
 export const schemesAPI = {
   getAll: () => apiCall('/api/schemes'),
@@ -82,6 +114,9 @@ export const firAPI = {
   }),
   submit: (id) => apiCall(`/api/fir/${id}/submit`, {
     method: 'POST'
+  }),
+  generatePdf: (id) => apiCall(`/api/fir/${id}/pdf`, {
+    method: 'POST'
   })
 };
 
@@ -102,6 +137,8 @@ export const alertsAPI = {
 };
 
 export default {
+  auth: authAPI,
+  blogs: blogsAPI,
   schemes: schemesAPI,
   fir: firAPI,
   alerts: alertsAPI

@@ -7,8 +7,8 @@ function authMiddleware(requiredRoles = []) {
   return (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ message: 'Missing Authorization header' });
-
-    const token = authHeader.split(' ')[1];
+    const [scheme, token] = authHeader.split(' ');
+    if (scheme !== 'Bearer') return res.status(401).json({ message: 'Invalid Authorization scheme' });
     if (!token) return res.status(401).json({ message: 'Invalid Authorization format' });
 
     // Development convenience: allow a fixed dev token when not in production.
@@ -22,7 +22,7 @@ function authMiddleware(requiredRoles = []) {
     try {
       const payload = jwt.verify(token, JWT_SECRET);
       req.user = payload;
-      if (requiredRoles.length && !requiredRoles.includes(payload.role)) {
+      if (requiredRoles.length && !requiredRoles.includes(String(payload.role || '').toLowerCase())) {
         return res.status(403).json({ message: 'Insufficient role' });
       }
       next();

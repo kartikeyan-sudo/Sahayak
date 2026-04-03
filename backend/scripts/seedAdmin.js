@@ -1,45 +1,42 @@
 require('dotenv').config();
-const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
-const AdminUser = require('../models/AdminUser');
+const { initDatabase, query, closePool } = require('../db');
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const DATABASE_URL = process.env.DATABASE_URL;
 
-if (!MONGODB_URI) {
-  console.error('❌ MONGODB_URI not found in .env file');
+if (!DATABASE_URL) {
+  console.error('❌ DATABASE_URL not found in .env file');
   process.exit(1);
 }
 
 async function seedAdmin() {
   try {
-    console.log('🔗 Connecting to MongoDB...');
-    await mongoose.connect(MONGODB_URI);
-    console.log('✅ Connected to MongoDB');
+    console.log('🔗 Connecting to Neon PostgreSQL...');
+    await initDatabase();
+    console.log('✅ Connected to Neon PostgreSQL');
 
     // Check if admin already exists
-    const existing = await AdminUser.findOne({ username: 'admin' });
-    if (existing) {
+    const existing = await query('SELECT id FROM admin_users WHERE username = $1', ['admin']);
+    if (existing.rows[0]) {
       console.log('ℹ️  Admin user already exists');
-      await mongoose.disconnect();
+      await closePool();
       process.exit(0);
     }
 
     // Create admin user
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash('admin', salt);
-    
-    const admin = new AdminUser({
-      username: 'admin',
-      email: 'admin@sahayak.local',
-      passwordHash: hash,
-      role: 'admin'
-    });
 
-    await admin.save();
+    await query(
+      `INSERT INTO admin_users (username, email, password_hash, role)
+       VALUES ($1, $2, $3, $4)`,
+      ['admin', 'admin@sahayak.local', hash, 'admin']
+    );
+
     console.log('✅ Admin user created successfully!');
     console.log('   Username: admin');
     console.log('   Password: admin');
-    await mongoose.disconnect();
+    await closePool();
     process.exit(0);
   } catch (err) {
     console.error('❌ Error seeding admin:', err.message);

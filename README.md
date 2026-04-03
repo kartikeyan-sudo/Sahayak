@@ -1,6 +1,6 @@
 # Sahayak – Scam Prevention & Government Policy Navigator
 
-**Sahayak** is a privacy-first, citizen-assistance platform built with the MERN stack that helps people understand government policies, prepare FIR drafts, and navigate cyber-fraud situations with confidence.
+**Sahayak** is a privacy-first, citizen-assistance platform built with a React + Node.js + Neon PostgreSQL stack that helps people understand government policies, prepare FIR drafts, and navigate cyber-fraud situations with confidence.
 
 ---
 
@@ -24,7 +24,7 @@
 
 ### Backend
 - **Node.js** with Express
-- **MongoDB** with Mongoose ODM
+- **Neon PostgreSQL** with `pg`
 - **CORS** for secure cross-origin requests
 
 ---
@@ -34,8 +34,9 @@
 ```
 sahayak-2.0/
 ├── backend/
-│   ├── models/          # Mongoose schemas (Scheme, FIRDraft, Alert)
+│   ├── models/          # Legacy mongoose schemas (not used in Neon setup)
 │   ├── routes/          # API routes (schemes, fir, alerts)
+│   ├── db.js            # Neon PostgreSQL client and schema init
 │   ├── index.js         # Express server entry point
 │   ├── package.json
 │   └── .env.example
@@ -59,7 +60,7 @@ sahayak-2.0/
 ### Prerequisites
 
 - **Node.js** (v16 or higher)
-- **MongoDB** (local or MongoDB Atlas)
+- **Neon PostgreSQL database**
 - **npm** or **yarn**
 
 ### 1. Clone the Repository
@@ -80,8 +81,8 @@ npm install
 # Create .env file (copy from .env.example)
 cp .env.example .env
 
-# Update MongoDB URI in .env
-# MONGODB_URI=mongodb://localhost:27017/sahayak
+# Update Neon database URL in .env
+# DATABASE_URL=postgresql://USER:PASSWORD@YOUR_NEON_HOST/YOUR_DB?sslmode=require
 
 # Start backend server
 npm run dev
@@ -262,11 +263,10 @@ This project is developed for demonstration and educational purposes.
 - Username: `demo`
 - Password: `sahayak2024`
 
-### MongoDB Setup (Optional)
-If you don't have MongoDB installed:
+### Neon Setup (Required)
+Use your Neon project connection string in backend/.env:
 ```bash
-# Use MongoDB Atlas (free tier)
-# Update MONGODB_URI in backend/.env with your Atlas connection string
+DATABASE_URL=postgresql://USER:PASSWORD@YOUR_NEON_HOST/YOUR_DB?sslmode=require
 ```
 
 ### Environment Variables
@@ -274,7 +274,7 @@ If you don't have MongoDB installed:
 **Backend (.env)**
 ```
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/sahayak
+DATABASE_URL=postgresql://USER:PASSWORD@YOUR_NEON_HOST/YOUR_DB?sslmode=require
 FRONTEND_URL=http://localhost:5173
 JWT_SECRET=your_secret_key
 NODE_ENV=development
@@ -292,7 +292,7 @@ VITE_APP_VERSION=1.0.0
 ## 🐛 Known Issues
 
 1. **Index.css styling**: May need manual cleanup for production
-2. **MongoDB not required**: App works fully with LocalStorage alone in prototype mode
+2. **Database setup required for APIs**: Set `DATABASE_URL` before starting backend
 3. **CORS**: Ensure backend CORS is configured for your frontend URL
 
 ---

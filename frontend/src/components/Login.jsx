@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { sessionStorage, activityStorage } from '../utils/localStorage';
+import { authAPI } from '../utils/api';
 import './Login.css';
 
 function Login({ onLoginSuccess }) {
@@ -22,12 +23,13 @@ function Login({ onLoginSuccess }) {
     }
   }, [onLoginSuccess]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    if (isRegistering) {
+    try {
+      if (isRegistering) {
       // Registration validation
       if (!credentials.name || credentials.name.length < 2) {
         setError('Please enter your full name');
@@ -54,70 +56,53 @@ function Login({ onLoginSuccess }) {
         setIsLoading(false);
         return;
       }
-      
-      // Save user to localStorage (demo)
-      localStorage.setItem('sahayak_user_' + credentials.username, JSON.stringify({
-        username: credentials.username,
-        password: credentials.password,
-        name: credentials.name,
-        email: credentials.email,
-        phone: credentials.phone
-      }));
-      
-      setTimeout(() => {
-        setIsLoading(false);
-        setIsRegistering(false);
-        setCredentials({ username: '', password: '', confirmPassword: '', name: '', email: '', phone: '' });
-        alert('Account created successfully! Please login.');
-      }, 800);
-    } else {
-      // Login logic
-      const storedUser = localStorage.getItem('sahayak_user_' + credentials.username);
-      
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        if (user.password === credentials.password) {
-          const sessionData = {
-            userId: credentials.username,
-            username: credentials.username,
-            name: user.name || credentials.username,
-            loginTime: new Date().toISOString(),
-            isActive: true
-          };
-          
-          sessionStorage.set(sessionData);
-          activityStorage.add({ type: 'login', description: 'Session started' });
-          
-          setTimeout(() => {
-            setIsLoading(false);
-            onLoginSuccess();
-          }, 800);
-          return;
-        }
-      }
-      
-      // Demo credentials
-      if (credentials.username === 'sahayak' && credentials.password === 'sahayak2026') {
+
+        const registerResponse = await authAPI.register({
+          name: credentials.name,
+          email: credentials.email,
+          phone: credentials.phone,
+          password: credentials.password
+        });
+
         const sessionData = {
-          userId: 'demo-user',
-          username: credentials.username,
+          userId: registerResponse.user.id,
+          username: credentials.username || credentials.email,
+          name: registerResponse.user.name,
+          email: registerResponse.user.email,
+          role: registerResponse.user.role,
+          token: registerResponse.token,
           loginTime: new Date().toISOString(),
           isActive: true
         };
-        
+
+        sessionStorage.set(sessionData);
+        activityStorage.add({ type: 'register', description: 'Account created and logged in' });
+        onLoginSuccess();
+      } else {
+        const loginResponse = await authAPI.login({
+          email: credentials.email,
+          password: credentials.password
+        });
+
+        const sessionData = {
+          userId: loginResponse.user.id,
+          username: credentials.username || loginResponse.user.email,
+          name: loginResponse.user.name,
+          email: loginResponse.user.email,
+          role: loginResponse.user.role,
+          token: loginResponse.token,
+          loginTime: new Date().toISOString(),
+          isActive: true
+        };
+
         sessionStorage.set(sessionData);
         activityStorage.add({ type: 'login', description: 'Session started' });
-        
-        setTimeout(() => {
-          setIsLoading(false);
-          onLoginSuccess();
-        }, 800);
-      } else {
-        setTimeout(() => {
-          setIsLoading(false);
-          setError('Invalid credentials');
-        }, 800);
+        onLoginSuccess();
       }
+    } catch (err) {
+      setError(err.message || 'Authentication failed');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -178,17 +163,30 @@ function Login({ onLoginSuccess }) {
           )}
 
           <div className="form-group">
-            <label htmlFor="username">Username</label>
+            <label htmlFor="username">Username (Optional)</label>
             <input
               type="text"
               id="username"
               value={credentials.username}
               onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
-              placeholder="Enter username"
-              required
+              placeholder="Optional display username"
               autoFocus={!isRegistering}
             />
           </div>
+
+          {!isRegistering && (
+            <div className="form-group">
+              <label htmlFor="email">Email Address</label>
+              <input
+                type="email"
+                id="email"
+                value={credentials.email}
+                onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
+                placeholder="Enter your email"
+                required
+              />
+            </div>
+          )}
 
           <div className="form-group">
             <label htmlFor="password">Password</label>
@@ -236,12 +234,7 @@ function Login({ onLoginSuccess }) {
             </button>
           </div>
 
-          {!isRegistering && (
-            <div className="demo-hint">
-              <p><strong>Demo Credentials:</strong></p>
-              <p>Username: <code>sahayak</code> | Password: <code>sahayak2026</code></p>
-            </div>
-          )}
+          {!isRegistering && <div className="demo-hint"><p>Use your registered email and password to login.</p></div>}
         </form>
 
         <div className="login-footer">

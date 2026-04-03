@@ -65,7 +65,7 @@ function SchemeEditor() {
 
   const openEdit = (scheme) => {
     setEditing(true);
-    setEditingId(scheme._id);
+    setEditingId(scheme._id || scheme.id);
     setForm({ name: scheme.name || '', code: scheme.code || '', governmentTag: scheme.governmentTag || '', description: scheme.description || '', url: scheme.url || '' });
     setShowForm(true);
   };
@@ -122,16 +122,19 @@ function SchemeEditor() {
         </thead>
         <tbody>
           {schemes.map(scheme => (
-            <tr key={scheme._id}>
+            <tr key={scheme._id || scheme.id}>
               <td>{scheme.name}</td>
               <td><code>{scheme.code}</code></td>
               <td>{scheme.governmentTag}</td>
               <td>{scheme.archived ? '📦 Archived' : '✅ Active'}</td>
               <td>
-                <button className="btn btn-primary" onClick={() => handleArchive(scheme._id, scheme.archived)}>
+                <button className="btn btn-primary" onClick={() => handleArchive(scheme._id || scheme.id, scheme.archived)}>
                   {scheme.archived ? 'Unarchive' : 'Archive'}
                 </button>
-                <button className="btn btn-danger" onClick={() => handleDelete(scheme._id)}>
+                <button className="btn" onClick={() => openEdit(scheme)}>
+                  Edit
+                </button>
+                <button className="btn btn-danger" onClick={() => handleDelete(scheme._id || scheme.id)}>
                   Delete
                 </button>
               </td>

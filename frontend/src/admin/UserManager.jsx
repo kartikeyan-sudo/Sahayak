@@ -105,6 +105,28 @@ function UserManager() {
     }
   };
 
+  const handlePermanentBan = async (user) => {
+    const confirmMessage = `Permanently ban ${user.name}? This will archive a ban record and delete the user from Neon.`;
+    if (!window.confirm(confirmMessage)) return;
+    const reason = window.prompt('Optional reason for the permanent ban:', '') || '';
+    try {
+      const token = localStorage.getItem('adminToken');
+      const resp = await fetch(`${API_BASE}/api/admin/users/${user._id}/permanent-ban`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason })
+      });
+      if (!resp.ok) throw new Error('Permanent ban failed');
+      fetchUsers();
+    } catch (err) {
+      alert('Error permanently banning user: ' + err.message);
+    }
+  };
+
   const viewActivity = (user) => {
     setSelectedUser(user);
     setShowActivityModal(true);
@@ -181,6 +203,13 @@ function UserManager() {
                     onClick={() => handleClearActivity(user._id)}
                   >
                     Clear Logs
+                  </button>
+                  <button
+                    className="btn btn-danger"
+                    style={{ marginLeft: 4, background: '#7f1d1d' }}
+                    onClick={() => handlePermanentBan(user)}
+                  >
+                    Permanent Ban
                   </button>
                 </td>
               </tr>

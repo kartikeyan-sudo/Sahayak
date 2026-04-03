@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import getApiBase from '../utils/apiBase';
 
 function Dashboard() {
-  const [stats, setStats] = useState({ blogs: 0, alerts: 0, schemes: 0, users: { total: 0, active: 0 } });
+  const [stats, setStats] = useState({ blogs: 0, alerts: 0, schemes: 0, firs: 0, users: { total: 0, active: 0 } });
   const API_BASE = getApiBase();
 
   useEffect(() => {
@@ -11,20 +11,26 @@ function Dashboard() {
 
   const fetchStats = async () => {
     try {
-      const [blogsResp, alertsResp, schemesResp, usersResp] = await Promise.all([
-        fetch(`${API_BASE}/api/admin/blogs`, { credentials: 'include' }),
-        fetch(`${API_BASE}/api/admin/alerts`, { credentials: 'include' }),
-        fetch(`${API_BASE}/api/admin/schemes`, { credentials: 'include' }),
-        fetch(`${API_BASE}/api/admin/users`, { credentials: 'include' })
+      const token = localStorage.getItem('adminToken');
+      const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+      const [blogsResp, alertsResp, schemesResp, usersResp, firsResp] = await Promise.all([
+        fetch(`${API_BASE}/api/admin/blogs`, { credentials: 'include', headers: authHeaders }),
+        fetch(`${API_BASE}/api/admin/alerts`, { credentials: 'include', headers: authHeaders }),
+        fetch(`${API_BASE}/api/admin/schemes`, { credentials: 'include', headers: authHeaders }),
+        fetch(`${API_BASE}/api/admin/users`, { credentials: 'include', headers: authHeaders }),
+        fetch(`${API_BASE}/api/admin/firs`, { credentials: 'include', headers: authHeaders })
       ]);
+      if (!usersResp.ok) throw new Error('Failed to load dashboard stats');
       const blogs = await blogsResp.json();
       const alerts = await alertsResp.json();
       const schemes = await schemesResp.json();
       const users = await usersResp.json();
+      const firs = await firsResp.json();
       setStats({
         blogs: blogs.length,
         alerts: alerts.filter(a => a.active).length,
         schemes: schemes.length,
+        firs: Array.isArray(firs) ? firs.length : 0,
         users: { total: users.total, active: users.active }
       });
     } catch (err) {
@@ -53,6 +59,10 @@ function Dashboard() {
         <div style={{background: '#f0f9ff', padding: 20, borderRadius: 8, border: '2px solid #7FDD7F'}}>
           <h3 style={{margin: 0, fontSize: 32, color: '#1a1a1a'}}>{stats.users.total}</h3>
           <p style={{margin: '8px 0 0 0', color: '#666'}}>Total Users</p>
+        </div>
+        <div style={{background: '#e8e5ff', padding: 20, borderRadius: 8, border: '2px solid #8e7dff'}}>
+          <h3 style={{margin: 0, fontSize: 32, color: '#1a1a1a'}}>{stats.firs}</h3>
+          <p style={{margin: '8px 0 0 0', color: '#666'}}>FIR Records</p>
         </div>
         <div style={{background: '#fff3cd', padding: 20, borderRadius: 8, border: '2px solid #ffc107'}}>
           <h3 style={{margin: 0, fontSize: 32, color: '#1a1a1a'}}>{stats.users.active}</h3>
