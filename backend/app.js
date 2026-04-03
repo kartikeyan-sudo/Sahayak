@@ -11,25 +11,19 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
   .map((s) => s.trim())
   .filter(Boolean);
 
+function normalizeOrigin(value) {
+  if (!value) return '';
+  try {
+    return new URL(value).origin.toLowerCase();
+  } catch {
+    return String(value).trim().replace(/\/+$/, '').toLowerCase();
+  }
+}
+
 function createApp() {
   const app = express();
 
-  app.use(cors({
-    origin: (origin, cb) => {
-      if (!origin) return cb(null, true);
-      const localhostRegex = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
-      if (localhostRegex.test(origin)) return cb(null, true);
-
-      const configured = new Set([FRONTEND_URL, ADMIN_FRONTEND_URL, ...ALLOWED_ORIGINS]);
-      if (configured.has(origin)) return cb(null, true);
-
-      return cb(null, false);
-    },
-    credentials: true,
-    optionsSuccessStatus: 200,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With']
-  }));
+  app.use(cors());
 
   app.use(express.json());
   app.use('/generated', express.static(path.join(__dirname, 'generated')));
